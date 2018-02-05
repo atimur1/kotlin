@@ -43,3 +43,6 @@ compileKotlin {
             "-module-name", project.name
     ]
 }
+
+kotlin.experimental.coroutines 'enable'
+
