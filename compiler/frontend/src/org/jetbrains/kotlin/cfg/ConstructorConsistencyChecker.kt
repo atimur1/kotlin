@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.cfg.pseudocodeTraverser.traverse
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.getStrictParentOfType
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.BindingTrace
@@ -169,7 +170,6 @@ class ConstructorConsistencyChecker private constructor(
 
     companion object {
 
-        @JvmStatic
         fun check(
             constructor: KtSecondaryConstructor,
             trace: BindingTrace,
@@ -177,7 +177,20 @@ class ConstructorConsistencyChecker private constructor(
             pseudocodeVariablesData: PseudocodeVariablesData
         ) = check(constructor.getContainingClassOrObject(), trace, pseudocode, pseudocodeVariablesData)
 
-        @JvmStatic
+        fun check(
+            initializer: KtClassInitializer,
+            trace: BindingTrace,
+            pseudocode: Pseudocode,
+            pseudocodeVariablesData: PseudocodeVariablesData
+        ) = check(initializer.containingDeclaration, trace, pseudocode, pseudocodeVariablesData)
+
+        fun check(
+            property: KtProperty,
+            trace: BindingTrace,
+            pseudocode: Pseudocode,
+            pseudocodeVariablesData: PseudocodeVariablesData
+        ) = property.containingClassOrObject?.let { check(it, trace, pseudocode, pseudocodeVariablesData) }
+
         fun check(
             classOrObject: KtClassOrObject,
             trace: BindingTrace,

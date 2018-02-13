@@ -14,6 +14,7 @@ import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.search.searches.DefinitionsScopedSearch
 import org.jetbrains.kotlin.cfg.LeakingThisDescriptor.*
 import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.idea.caches.resolve.analyze
 import org.jetbrains.kotlin.idea.caches.resolve.analyzeFully
 import org.jetbrains.kotlin.idea.quickfix.AddModifierFix
 import org.jetbrains.kotlin.lexer.KtTokens
@@ -28,7 +29,7 @@ import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils
 class LeakingThisInspection : AbstractKotlinInspection() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean, session: LocalInspectionToolSession): PsiElementVisitor {
         return expressionVisitor { expression ->
-            val context = expression.analyzeFully()
+            val context = expression.analyze()
             val leakingThisDescriptor = context.get(LEAKING_THIS, expression) ?: return@expressionVisitor
             val description = when (leakingThisDescriptor) {
                 is NonFinalClass ->
