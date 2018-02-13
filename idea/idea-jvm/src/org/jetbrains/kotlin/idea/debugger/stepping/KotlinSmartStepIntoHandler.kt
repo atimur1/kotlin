@@ -34,7 +34,7 @@ import org.jetbrains.kotlin.descriptors.ConstructorDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.PropertyDescriptor
 import org.jetbrains.kotlin.idea.caches.resolve.analyze
-import org.jetbrains.kotlin.idea.caches.resolve.analyzeFully
+import org.jetbrains.kotlin.idea.caches.resolve.analyzeWithContent
 import org.jetbrains.kotlin.idea.codeInsight.CodeInsightUtils
 import org.jetbrains.kotlin.idea.codeInsight.DescriptorToSourceUtilsIde
 import org.jetbrains.kotlin.idea.util.application.runReadAction
@@ -62,7 +62,7 @@ class KotlinSmartStepIntoHandler : JvmSmartStepIntoHandler() {
         val doc = PsiDocumentManager.getInstance(file.project).getDocument(file) ?: return emptyList()
 
         val lines = Range(doc.getLineNumber(elementTextRange.startOffset), doc.getLineNumber(elementTextRange.endOffset))
-        val bindingContext = element.analyzeFully()
+        val bindingContext = if (element is KtDeclaration) element.analyzeWithContent() else element.analyze()
         val result = OrderedSet<SmartStepTarget>()
 
         // TODO support class initializers, local functions, delegated properties with specified type, setter for properties
