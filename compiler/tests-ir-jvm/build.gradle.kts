@@ -1,8 +1,9 @@
 apply { plugin("kotlin") }
+apply { plugin("jps-compatible") }
 
 dependencies {
     testRuntime(intellijDep())
-    testCompile(projectTests(":compiler:tests-common"))
+    testCompile(project(":compiler:tests-common"))
     testCompile(projectDist(":kotlin-script-runtime"))
     testCompile(projectDist(":kotlin-stdlib"))
     testCompile(projectDist(":kotlin-test:kotlin-test-jvm"))

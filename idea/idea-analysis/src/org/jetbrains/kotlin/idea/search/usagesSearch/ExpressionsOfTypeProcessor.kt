@@ -72,17 +72,16 @@ class ExpressionsOfTypeProcessor(
         private val possibleMatchHandler: (KtExpression) -> Unit,
         private val possibleMatchesInScopeHandler: (SearchScope) -> Unit
 ) {
-    @TestOnly
-    enum class Mode {
+    enum class Mode @TestOnly constructor() {
         ALWAYS_SMART,
         ALWAYS_PLAIN,
         PLAIN_WHEN_NEEDED // use plain search for LocalSearchScope and when unknown type of reference encountered
     }
 
     companion object {
-        @TestOnly
+        @get:TestOnly
         var mode = if (ApplicationManager.getApplication().isUnitTestMode) Mode.ALWAYS_SMART else Mode.PLAIN_WHEN_NEEDED
-        @TestOnly
+        @get:TestOnly
         var testLog: MutableList<String>? = null
 
         inline fun testLog(s: () -> String) {

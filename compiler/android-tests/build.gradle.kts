@@ -1,5 +1,6 @@
 
 apply { plugin("kotlin") }
+apply { plugin("jps-compatible") }
 
 jvmTarget = "1.6"
 
@@ -8,7 +9,7 @@ dependencies {
     compile(project(":compiler:cli"))
     compile(project(":compiler:frontend"))
     compile(project(":compiler:backend"))
-    compile(projectTests(":compiler:tests-common"))
+    compile(project(":compiler:tests-common"))
     compile(commonDep("junit:junit"))
     compileOnly(intellijDep()) { includeJars("openapi") }
 

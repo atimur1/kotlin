@@ -1,5 +1,6 @@
 
 apply { plugin("kotlin") }
+apply { plugin("jps-compatible") }
 
 dependencies {
     compile(protobufFull())
@@ -17,7 +18,7 @@ dependencies {
     compile(project(":idea:idea-test-framework"))
     compile(projectDist(":kotlin-test:kotlin-test-jvm"))
     compile(projectTests(":kotlin-build-common"))
-    compile(projectTests(":compiler:tests-common"))
+    compile(project(":compiler:tests-common"))
     compile(projectTests(":compiler:container"))
     compile(projectTests(":compiler:incremental-compilation-impl"))
     compile(projectTests(":compiler:cli"))
@@ -50,7 +51,7 @@ dependencies {
 }
 
 sourceSets {
-    "main" { projectDefault() }
+    "main" { }
     "test" { projectDefault() }
 }
 

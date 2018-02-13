@@ -104,7 +104,7 @@ private val SUPPORTED_ARGUMENT_TYPES = listOf(
     PsiChildRangeArgumentType
 )
 
-@TestOnly
+@get:TestOnly
 var CREATEBYPATTERN_MAY_NOT_REFORMAT = false
 
 fun <TElement : KtElement> createByPattern(

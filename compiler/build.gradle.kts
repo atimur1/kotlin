@@ -4,6 +4,7 @@ import org.gradle.api.tasks.bundling.Jar
 import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
 
 apply { plugin("kotlin") }
+apply { plugin("jps-compatible") }
 
 jvmTarget = "1.6"
 
@@ -61,7 +62,7 @@ dependencies {
     testCompile(commonDep("junit:junit"))
     testCompileOnly(projectDist(":kotlin-test:kotlin-test-jvm"))
     testCompileOnly(projectDist(":kotlin-test:kotlin-test-junit"))
-    testCompile(projectTests(":compiler:tests-common"))
+    testCompile(project(":compiler:tests-common"))
     testCompile(projectTests(":generators:test-generator"))
     testCompile(project(":compiler:ir.ir2cfg"))
     testCompile(project(":compiler:ir.tree")) // used for deepCopyWithSymbols call that is removed by proguard from the compiler TODO: make it more straightforward
@@ -78,7 +79,7 @@ dependencies {
     testRuntime(androidDxJar())
     testRuntime(files(toolsJar()))
 
-    testJvm6ServerRuntime(projectTests(":compiler:tests-common-jvm6"))
+    testJvm6ServerRuntime(project(":compiler:tests-common-jvm6"))
 
     antLauncherJar(commonDep("org.apache.ant", "ant"))
     antLauncherJar(files(toolsJar()))

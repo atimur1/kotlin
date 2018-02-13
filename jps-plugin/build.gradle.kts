@@ -1,4 +1,5 @@
 apply { plugin("kotlin") }
+apply { plugin("jps-compatible") }
 
 val compilerModules: Array<String> by rootProject.extra
 
@@ -16,7 +17,7 @@ dependencies {
     compileOnly(intellijDep("jps-standalone")) { includeJars("jps-builders", "jps-builders-6") }
     testCompileOnly(project(":kotlin-reflect-api"))
     testCompile(project(":compiler:incremental-compilation-impl"))
-    testCompile(projectTests(":compiler:tests-common"))
+    testCompile(project(":compiler:tests-common"))
     testCompile(projectTests(":compiler:incremental-compilation-impl"))
     testCompile(commonDep("junit:junit"))
     testCompile(projectDist(":kotlin-test:kotlin-test-jvm"))

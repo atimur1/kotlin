@@ -1,9 +1,10 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 apply { plugin("kotlin") }
+apply { plugin("jps-compatible") }
 
 dependencies {
-    testCompile(projectTests(":compiler:tests-common"))
+    testCompile(project(":compiler:tests-common"))
     testCompile(intellijCoreDep()) { includeJars("intellij-core") }
     testCompile(projectTests(":generators:test-generator"))
     testRuntime(projectDist(":kotlin-reflect"))

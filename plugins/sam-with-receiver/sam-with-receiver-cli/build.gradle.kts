@@ -2,6 +2,7 @@
 description = "Kotlin SamWithReceiver Compiler Plugin"
 
 apply { plugin("kotlin") }
+apply { plugin("jps-compatible") }
 
 dependencies {
     compileOnly(project(":compiler:frontend"))
@@ -12,7 +13,7 @@ dependencies {
     testCompile(project(":compiler:backend"))
     testCompile(project(":compiler:cli"))
     testCompile(project(":compiler:tests-common"))
-    testCompile(projectTests(":compiler:tests-common"))
+    testCompile(project(":compiler:tests-common"))
     testCompile(commonDep("junit:junit"))
 }
 

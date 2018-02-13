@@ -11,6 +11,7 @@ node {
 }
 
 apply { plugin("kotlin") }
+apply { plugin("jps-compatible") }
 
 val antLauncherJar by configurations.creating
 
@@ -18,7 +19,7 @@ dependencies {
     testRuntime(intellijDep())
 
     testCompile(protobufFull())
-    testCompile(projectTests(":compiler:tests-common"))
+    testCompile(project(":compiler:tests-common"))
     testCompileOnly(project(":compiler:frontend"))
     testCompileOnly(project(":compiler:cli"))
     testCompileOnly(project(":compiler:util"))

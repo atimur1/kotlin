@@ -1,12 +1,13 @@
 
 apply { plugin("kotlin") }
+apply { plugin("jps-compatible") }
 
 jvmTarget = "1.6"
 
 dependencies {
     compile(intellijDep()) { includeJars("util") }
     testCompile(project(":core:util.runtime"))
-    testCompile(projectTests(":compiler:tests-common"))
+    testCompile(project(":compiler:tests-common"))
     testCompile(projectDist(":kotlin-stdlib"))
     testCompile(commonDep("junit:junit"))
 }

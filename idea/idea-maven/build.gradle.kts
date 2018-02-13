@@ -1,5 +1,6 @@
 
 apply { plugin("kotlin") }
+apply { plugin("jps-compatible") }
 
 dependencies {
     compile(project(":core:util.runtime"))
@@ -19,7 +20,7 @@ dependencies {
     excludeInAndroidStudio(rootProject) { compileOnly(intellijPluginDep("maven")) { includeJars("maven", "maven-server-api") } }
 
     testCompile(projectTests(":idea"))
-    testCompile(projectTests(":compiler:tests-common"))
+    testCompile(project(":compiler:tests-common"))
     testCompile(project(":idea:idea-test-framework"))
 
     testCompileOnly(intellijDep()) { includeJars("openapi", "idea", "gson", "idea_rt", rootProject = rootProject) }
