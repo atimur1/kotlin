@@ -65,7 +65,6 @@ sealed class PDependency {
     data class Module(val name: String) : PDependency()
     data class Library(val name: String) : PDependency()
     data class ModuleLibrary(val library: PLibrary) : PDependency()
-    data class LinkedLibrary(val library: PLibrary) : PDependency()
 }
 
 data class PLibrary(
@@ -74,7 +73,8 @@ data class PLibrary(
     val javadoc: List<File> = emptyList(),
     val sources: List<File> = emptyList(),
     val jarDirectories: List<File> = emptyList(),
-    val annotations: List<File> = emptyList()
+    val annotations: List<File> = emptyList(),
+    val dependencies: List<PLibrary> = emptyList()
 )
 
 fun parse(project: Project, context: ParserContext): PProject = with (context) {
@@ -101,15 +101,6 @@ private val SOURCE_SET_MAPPING = mapOf(
     "main" to Kind.PRODUCTION,
     "test" to Kind.TEST
 )
-
-class DependencyMapper(
-    val group: String,
-    val module: String,
-    val configuration: String,
-    val mapping: (ResolvedDependency) -> PDependency?
-)
-
-class ParserContext(val dependencyMappers: List<DependencyMapper>)
 
 private fun ParserContext.parseModules(project: Project): List<PModule> {
     val (productionContentRoots, testContentRoots) = parseContentRoots(project).partition { !it.forTests }
@@ -237,6 +228,7 @@ private fun ParserContext.parseDependencies(project: Project, forTests: Boolean)
     with(project.configurations) {
         val moduleRoots = mutableListOf<POrderRoot>()
         val libraryRoots = mutableListOf<POrderRoot>()
+        val deferredRoots = mutableListOf<POrderRoot>()
 
         fun collectConfigurations(): List<Pair<ResolvedConfiguration, Scope>> {
             val configurations = mutableListOf<Pair<ResolvedConfiguration, Scope>>()
@@ -259,15 +251,20 @@ private fun ParserContext.parseDependencies(project: Project, forTests: Boolean)
             for (mapper in dependencyMappers) {
                 if (dependency.moduleGroup == mapper.group
                     && dependency.moduleName == mapper.module
-                    && dependency.configuration == mapper.configuration
+                    && dependency.configuration in mapper.configurations
                 ) {
                     val mappedDependency = mapper.mapping(dependency)
+
                     if (mappedDependency != null) {
-                        val orderRoot = POrderRoot(mappedDependency, scope)
-                        if (mappedDependency is PDependency.Module) {
+                        val orderRoot = POrderRoot(mappedDependency.main, scope)
+                        if (mappedDependency.main is PDependency.Module) {
                             moduleRoots += orderRoot
                         } else {
                             libraryRoots += orderRoot
+                        }
+
+                        for (deferredDep in mappedDependency.deferred) {
+                            deferredRoots += POrderRoot(deferredDep, scope)
                         }
                     }
 
@@ -290,31 +287,11 @@ private fun ParserContext.parseDependencies(project: Project, forTests: Boolean)
             }
         }
 
-//        for ((configurationNames, scope) in configurationMapping) {
-//            for (configurationName in configurationNames) {
-//                val configuration = findByName(configurationName)?.also { it.resolve() } ?: continue
-//
-//                if (project.name == "backend") {
-//                    configuration.resolvedConfiguration.firstLevelModuleDependencies.forEach { println(it) }
-//                    println("--------")
-//                    configuration.resolvedConfiguration.collectDependencies().forEach { println(it) }
-//                    println()
-//                    println()
-//                }
-//
-//                nextDependency@ for (dependency in configuration.resolvedConfiguration.collectDependencies()) {
-////                    println("${project.name}: $dependency")
-//
-//
-//                }
-//            }
-//        }
-
         if (project.name == "android-extensions-jps") {
             libraryRoots.forEach { println("aej: $it") }
         }
 
-        return removeDuplicates(moduleRoots + libraryRoots)
+        return removeDuplicates(moduleRoots + libraryRoots + deferredRoots)
     }
 }
 

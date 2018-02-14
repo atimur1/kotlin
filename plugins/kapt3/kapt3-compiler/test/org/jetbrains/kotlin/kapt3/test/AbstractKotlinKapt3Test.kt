@@ -210,7 +210,7 @@ open class AbstractClassFileToSourceStubConverterTest : AbstractKotlinKapt3Test(
 
     override fun doTest(filePath: String) {
         super.doTest(filePath)
-        doTestWithJdk9(AbstractClassFileToSourceStubConverterTest::class.java, filePath)
+//        doTestWithJdk9(AbstractClassFileToSourceStubConverterTest::class.java, filePath)
     }
 
     override fun check(kaptContext: KaptContext<GenerationState>, javaFiles: List<File>, txtFile: File, wholeFile: File) {

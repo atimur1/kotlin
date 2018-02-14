@@ -56,8 +56,13 @@ object KotlinSpecific {
 
         libraries += PLibrary(
             "kotlin-stdlib",
-            classes = listOf(distJar("kotlin-stdlib"), distJar("annotations-13.0")),
+            classes = listOf(distJar("kotlin-stdlib")),
             sources = listOf(distJar("kotlin-stdlib-sources"))
+        )
+
+        libraries += PLibrary(
+            "annotations-13.0",
+            classes = listOf(distJar("annotations-13.0"))
         )
 
         libraries += PLibrary(
@@ -94,22 +99,22 @@ object KotlinSpecific {
 //            }
 //        }
 
-        // Convert module-local dependencies to project dependencies
-        val moduleLibraries = project.modules
-            .flatMap { it.orderRoots }
-            .map { it.dependency }
-            .filterIsInstance<PDependency.LinkedLibrary>()
-            .map { it.library }
-            .distinct()
-
-        outer@ for (lib in moduleLibraries) {
-            val name = lib.renderName()
-            if (libraries.any { it.name == name }) {
-                continue@outer
-            }
-
-            libraries += lib.copy(name = name)
-        }
+//        // Convert module-local dependencies to project dependencies
+//        val moduleLibraries = project.modules
+//            .flatMap { it.orderRoots }
+//            .map { it.dependency }
+//            .filterIsInstance<PDependency.LinkedLibrary>()
+//            .map { it.library }
+//            .distinct()
+//
+//        outer@ for (lib in moduleLibraries) {
+//            val name = lib.renderName()
+//            if (libraries.any { it.name == name }) {
+//                continue@outer
+//            }
+//
+//            libraries += lib.copy(name = name)
+//        }
 
         return libraries
     }

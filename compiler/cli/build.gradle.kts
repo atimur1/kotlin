@@ -43,6 +43,11 @@ sourceSets {
     }
 }
 
+val processResources: Copy by tasks
+processResources.from("../idea/src") {
+    include("META-INF/extensions/compiler.xml")
+}
+
 testsJar {}
 
 projectTest {

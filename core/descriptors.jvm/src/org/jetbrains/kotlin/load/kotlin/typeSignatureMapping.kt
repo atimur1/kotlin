@@ -200,7 +200,8 @@ private fun <T : Any> mapBuiltInType(type: KotlinType, typeFactory: JvmTypeFacto
         val classId = JavaToKotlinClassMap.mapKotlinToJava(descriptor.fqNameUnsafe)
         if (classId != null) {
             if (!mode.kotlinCollectionsToJavaCollections &&
-                JavaToKotlinClassMap.mutabilityMappings.any { it.javaClass == classId }) return null
+                JavaToKotlinClassMap.mutabilityMappings.any { it.javaClass == classId }
+            ) return null
 
             return typeFactory.createObjectType(JvmClassName.byClassId(classId).internalName)
         }

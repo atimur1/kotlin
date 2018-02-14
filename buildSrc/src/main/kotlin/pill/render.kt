@@ -128,12 +128,7 @@ private fun renderModule(project: PProject, module: PModule) = PFile(
                         "name" to dependency.name,
                         "level" to "project"
                     )
-                    is PDependency.LinkedLibrary -> arrayOf(
-                            "type" to "library",
-                            "scope" to orderRoot.scope.toString(),
-                            "name" to dependency.library.renderName(),
-                            "level" to "project"
-                    )
+                    else -> error("Unsupported dependency type: $dependency")
                 }
 
                 if (dependency is PDependency.Module && orderRoot.isProductionOnTestDependency) {

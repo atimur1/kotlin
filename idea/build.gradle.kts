@@ -99,11 +99,6 @@ dependencies {
     testRuntime(intellijPluginDep("testng"))
 }
 
-val processResources: Copy by tasks
-processResources.from("../compiler/cli/src") {
-    include("META-INF/extensions/compiler.xml")
-}
-
 sourceSets {
     "main" {
         projectDefault()
