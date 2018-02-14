@@ -1,7 +1,5 @@
 package org.jetbrains.kotlin.script.util
 
-import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
-import org.jetbrains.kotlin.utils.PathUtil
 import java.io.File
 import java.io.FileNotFoundException
 import java.net.URL
@@ -10,6 +8,12 @@ import kotlin.reflect.KClass
 import kotlin.script.templates.standard.ScriptTemplateWithArgs
 
 // TODO: consider moving all these utilites to the build-common or some other shared compiler API module
+
+internal const val KOTLIN_JAVA_STDLIB_JAR = "kotlin-stdlib.jar"
+internal const val KOTLIN_JAVA_REFLECT_JAR = "kotlin-reflect.jar"
+internal const val KOTLIN_JAVA_SCRIPT_RUNTIME_JAR = "kotlin-script-runtime.jar"
+internal const val KOTLIN_COMPILER_NAME = "kotlin-compiler"
+internal const val KOTLIN_COMPILER_JAR = "$KOTLIN_COMPILER_NAME.jar"
 
 internal const val KOTLIN_SCRIPT_CLASSPATH_PROPERTY = "kotlin.script.classpath"
 internal const val KOTLIN_COMPILER_CLASSPATH_PROPERTY = "kotlin.compiler.classpath"
@@ -38,8 +42,10 @@ fun classpathFromClasspathProperty(): List<File>? =
                 ?.dropLastWhile(String::isEmpty)
                 ?.map(::File)
 
-fun classpathFromClass(classLoader: ClassLoader, klass: KClass<out Any>): List<File>? {
-    val clp = "${klass.qualifiedName?.replace('.', '/')}.class"
+fun classpathFromClass(classLoader: ClassLoader, klass: KClass<out Any>): List<File>? = classpathFromFQN(classLoader, klass.qualifiedName!!)
+
+fun classpathFromFQN(classLoader: ClassLoader, fqn: String): List<File>? {
+    val clp = "${fqn.replace('.', '/')}.class"
     val url = classLoader.getResource(clp)
     return url?.toURI()?.path?.removeSuffix(clp)?.let {
         listOf(File(it))
@@ -51,7 +57,7 @@ fun File.matchMaybeVersionedFile(baseName: String) =
         name == baseName.removeSuffix(".jar") || // for classes dirs
         Regex(Regex.escape(baseName.removeSuffix(".jar")) + "(-\\d.*)?\\.jar").matches(name)
 
-private const val KOTLIN_COMPILER_EMBEDDABLE_JAR = "${PathUtil.KOTLIN_COMPILER_NAME}-embeddable.jar"
+private const val KOTLIN_COMPILER_EMBEDDABLE_JAR = "$KOTLIN_COMPILER_NAME-embeddable.jar"
 
 internal fun List<File>.takeIfContainsAll(vararg keyNames: String): List<File>? =
         takeIf { classpath ->
@@ -77,13 +83,13 @@ object KotlinJars {
     }
 
     val compilerClasspath: List<File> by lazy {
-        val kotlinCompilerJars = listOf(PathUtil.KOTLIN_COMPILER_JAR, KOTLIN_COMPILER_EMBEDDABLE_JAR)
-        val kotlinLibsJars = listOf(PathUtil.KOTLIN_JAVA_STDLIB_JAR, PathUtil.KOTLIN_JAVA_REFLECT_JAR, PathUtil.KOTLIN_JAVA_SCRIPT_RUNTIME_JAR)
+        val kotlinCompilerJars = listOf(KOTLIN_COMPILER_JAR, KOTLIN_COMPILER_EMBEDDABLE_JAR)
+        val kotlinLibsJars = listOf(KOTLIN_JAVA_STDLIB_JAR, KOTLIN_JAVA_REFLECT_JAR, KOTLIN_JAVA_SCRIPT_RUNTIME_JAR)
         val kotlinBaseJars = kotlinCompilerJars + kotlinLibsJars
 
         val classpath = explicitCompilerClasspath
                         // search classpath from context classloader and `java.class.path` property
-                        ?: (classpathFromClass(Thread.currentThread().contextClassLoader, K2JVMCompiler::class)
+                        ?: (classpathFromFQN(Thread.currentThread().contextClassLoader, "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler")
                             ?: classpathFromClassloader(Thread.currentThread().contextClassLoader)?.takeIf { it.isNotEmpty() }
                             ?: classpathFromClasspathProperty()
                            )?.filter { f -> kotlinBaseJars.any { f.matchMaybeVersionedFile(it) } }?.takeIf { it.isNotEmpty() }
@@ -97,23 +103,92 @@ object KotlinJars {
     private fun getLib(propertyName: String, jarName: String, markerClass: KClass<*>): File? =
             System.getProperty(propertyName)?.let(::File)?.takeIf(File::exists)
             ?: explicitCompilerClasspath?.firstOrNull { it.matchMaybeVersionedFile(jarName) }?.takeIf(File::exists)
-            ?: PathUtil.getResourcePathForClass(markerClass.java).takeIf(File::exists)
+            ?: getResourcePathForClass(markerClass.java).takeIf(File::exists)
 
     val stdlib: File? by lazy {
         System.getProperty(KOTLIN_STDLIB_JAR_PROPERTY)?.let(::File)?.takeIf(File::exists)
-        ?: getLib(KOTLIN_RUNTIME_JAR_PROPERTY, PathUtil.KOTLIN_JAVA_STDLIB_JAR, JvmStatic::class)
+        ?: getLib(KOTLIN_RUNTIME_JAR_PROPERTY, KOTLIN_JAVA_STDLIB_JAR, JvmStatic::class)
     }
 
-    val scriptRuntime: File? by lazy { getLib(KOTLIN_SCRIPT_RUNTIME_JAR_PROPERTY, PathUtil.KOTLIN_JAVA_SCRIPT_RUNTIME_JAR, ScriptTemplateWithArgs::class) }
+    val scriptRuntime: File? by lazy {
+        getLib(KOTLIN_SCRIPT_RUNTIME_JAR_PROPERTY, KOTLIN_JAVA_SCRIPT_RUNTIME_JAR, ScriptTemplateWithArgs::class)
+    }
 
     val kotlinScriptStandardJars get() = listOf(stdlib, scriptRuntime).filterNotNull()
 }
 
 private fun URL.toFile() =
+    try {
+        File(toURI().schemeSpecificPart)
+    } catch (e: java.net.URISyntaxException) {
+        if (protocol != "file") null
+        else File(file)
+    }
+
+
+private fun getResourceRoot(context: Class<*>, path: String): String? {
+    var url: URL? = context.getResource(path)
+    if (url == null) {
+        url = ClassLoader.getSystemResource(path.substring(1))
+    }
+    return if (url != null) extractRoot(url, path) else null
+}
+
+private const val JAR_PROTOCOL = "jar"
+private const val FILE_PROTOCOL = "file"
+private const val JAR_SEPARATOR = "!/"
+private const val SCHEME_SEPARATOR = "://"
+
+private fun extractRoot(resourceURL: URL, resourcePath: String): String? {
+    if (!resourcePath.startsWith('/') || resourcePath.startsWith('\\')) return null
+
+    var resultPath: String? = null
+    val protocol = resourceURL.protocol
+    if (protocol == FILE_PROTOCOL) {
+        val path = resourceURL.toFile()!!.path
+        val testPath = path.replace('\\', '/')
+        val testResourcePath = resourcePath.replace('\\', '/')
+        if (testPath.endsWith(testResourcePath, ignoreCase = true)) {
+            resultPath = path.substring(0, path.length - resourcePath.length)
+        }
+    } else if (protocol == JAR_PROTOCOL) {
+        val paths = splitJarUrl(resourceURL.file)
+        if (paths?.first != null) {
+            resultPath = File(paths.first).canonicalPath
+        }
+    }
+
+    return resultPath?.trimEnd(File.separatorChar)
+}
+
+private fun splitJarUrl(url: String): Pair<String, String>? {
+    val pivot = url.indexOf(JAR_SEPARATOR).takeIf { it >= 0 } ?: return null
+
+    val resourcePath = url.substring(pivot + 2)
+    var jarPath = url.substring(0, pivot)
+
+    if (jarPath.startsWith(JAR_PROTOCOL + ":")) {
+        jarPath = jarPath.substring(JAR_PROTOCOL.length + 1)
+    }
+
+    if (jarPath.startsWith(FILE_PROTOCOL)) {
         try {
-            File(toURI().schemeSpecificPart)
+            jarPath = URL(jarPath).toFile()!!.path.replace('\\', '/')
+        } catch (e: Exception) {
+            jarPath = jarPath.substring(FILE_PROTOCOL.length)
+            if (jarPath.startsWith(SCHEME_SEPARATOR)) {
+                jarPath = jarPath.substring(SCHEME_SEPARATOR.length)
+            } else if (jarPath.startsWith(':')) {
+                jarPath = jarPath.substring(1)
+            }
         }
-        catch (e: java.net.URISyntaxException) {
-            if (protocol != "file") null
-            else File(file)
-        }
+
+    }
+    return Pair(jarPath, resourcePath)
+}
+
+fun getResourcePathForClass(aClass: Class<*>): File {
+    val path = "/" + aClass.name.replace('.', '/') + ".class"
+    val resourceRoot = getResourceRoot(aClass, path) ?: throw IllegalStateException("Resource not found: $path")
+    return File(resourceRoot).absoluteFile
+}
