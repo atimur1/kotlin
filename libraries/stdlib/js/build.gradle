@@ -184,7 +184,9 @@ task compileJs(type: JavaExec) {
         args = [jsOutputFile, rootDir, "$jsSrcDir/wrapper.js"] + inputFiles.collect { it.path } +
                (compileBuiltinsKotlin2Js.outputs.files.collect { it.path } +
                compileKotlin2Js.outputs.files.collect { it.path } +
-               compileExperimentalKotlin2Js.outputs.files.collect { it.path }).findAll { it.endsWith(".js") }
+               compileExperimentalKotlin2Js.outputs.files.collect { it.path }).findAll {
+                   it.endsWith(".js") && !it.endsWith(".meta.js")
+               }
     }
     classpath = configurations.merger
 
