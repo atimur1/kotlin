@@ -14,6 +14,8 @@ dependencies {
     testCompile(project(":compiler:tests-common"))
     testCompile(projectTests(":compiler:tests-common"))
     testCompile(commonDep("junit:junit"))
+
+    testRuntime(intellijDep()) { includeJars("bootstrap", "platform-impl") }
 }
 
 sourceSets {
