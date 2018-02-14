@@ -88,6 +88,9 @@ internal class ProjectResolutionFacade(
 
     fun getAnalysisResultsForElements(elements: Collection<KtElement>) = fileAnalysisCache.getAnalysisResultsForElements(elements)
 
+    fun getAnalysisResultsForElementsIfReady(elements: Collection<KtElement>) =
+        fileAnalysisCache.getAnalysisResultsForElementsIfReady(elements)
+
     override fun toString(): String {
         return "$debugString@${Integer.toHexString(hashCode())}"
     }

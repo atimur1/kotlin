@@ -33,7 +33,6 @@ import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.lazy.AbsentDescriptorHandler
 import org.jetbrains.kotlin.resolve.lazy.BodyResolveMode
 import org.jetbrains.kotlin.resolve.lazy.ResolveSession
-import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
 
 internal class ResolutionFacadeImpl(
         private val projectFacade: ProjectResolutionFacade,
@@ -55,6 +54,7 @@ internal class ResolutionFacadeImpl(
 
     override fun analyze(elements: Collection<KtElement>, bodyResolveMode: BodyResolveMode): BindingContext {
         if (elements.isEmpty()) return BindingContext.EMPTY
+        projectFacade.getAnalysisResultsForElementsIfReady(elements)?.let { return it.bindingContext }
         val resolveElementCache = getFrontendService(elements.first(), ResolveElementCache::class.java)
         return resolveElementCache.resolveToElements(elements, bodyResolveMode)
     }

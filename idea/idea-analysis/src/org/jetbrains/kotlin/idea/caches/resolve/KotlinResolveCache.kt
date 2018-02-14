@@ -39,10 +39,10 @@ import org.jetbrains.kotlin.psi.psiUtil.parentsWithSelf
 import org.jetbrains.kotlin.resolve.*
 import org.jetbrains.kotlin.resolve.lazy.BodyResolveMode
 import org.jetbrains.kotlin.resolve.lazy.ResolveSession
-import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 internal class PerFileAnalysisCache(val file: KtFile, val componentProvider: ComponentProvider) {
-    private val cache = HashMap<PsiElement, AnalysisResult>()
+    private val cache = ConcurrentHashMap<PsiElement, AnalysisResult>()
 
     private fun lookUp(analyzableElement: KtElement): AnalysisResult? {
         // Looking for parent elements that are already analyzed
@@ -65,6 +65,11 @@ internal class PerFileAnalysisCache(val file: KtFile, val componentProvider: Com
         cache.keys.removeAll(toRemove)
 
         return result
+    }
+
+    fun getAnalysisResultsIfReady(element: KtElement): AnalysisResult? {
+        assert(element.containingKtFile == file) { "Wrong file. Expected $file, but was ${element.containingKtFile}" }
+        return lookUp(KotlinResolveDataProvider.findAnalyzableParent(element))
     }
 
     fun getAnalysisResults(element: KtElement): AnalysisResult {

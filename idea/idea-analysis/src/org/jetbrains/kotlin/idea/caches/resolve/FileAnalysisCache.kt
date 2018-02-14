@@ -55,6 +55,27 @@ class FileAnalysisCache(project: Project, private val moduleResolverProvider: ()
         }
     }
 
+    fun getAnalysisResultsForElementsIfReady(elements: Collection<KtElement>): AnalysisResult? {
+        assert(elements.isNotEmpty()) { "elements collection should not be empty" }
+        val slruCache = synchronized(analysisResults) {
+            analysisResults.value!!
+        }
+        val results = elements.map {
+            val perFileCache = synchronized(slruCache) {
+                slruCache[it.containingKtFile]
+            }
+            perFileCache.getAnalysisResultsIfReady(it) ?: return null
+        }
+        val withError = results.firstOrNull { it.isError() }
+        val bindingContext = CompositeBindingContext.create(results.map { it.bindingContext })
+        return if (withError != null) {
+            AnalysisResult.internalError(bindingContext, withError.error)
+        } else {
+            //TODO: (module refactoring) several elements are passed here in debugger
+            AnalysisResult.success(bindingContext, findModuleDescriptor(elements.first().getModuleInfo()))
+        }
+    }
+
     fun findModuleDescriptor(ideaModuleInfo: IdeaModuleInfo): ModuleDescriptor {
         return moduleResolverProvider().resolverForProject.descriptorForModule(ideaModuleInfo)
     }
